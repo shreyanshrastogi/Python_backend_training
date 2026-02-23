@@ -1,0 +1,20 @@
+{
+    "students": [
+        {
+            "name": "shivom",
+            "score": 100
+        },
+        {
+            "name": "shreyansh",
+            "score": 0
+        },
+        {
+            "name": "anand",
+            "score": 69
+        },
+        {
+            "name": "lakshay",
+            "score": 40
+        }
+    ]
+}
