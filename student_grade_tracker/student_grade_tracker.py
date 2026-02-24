@@ -17,7 +17,15 @@ def student_grade_tracker() -> None:
         student_name: str = input("Input Student name:")
         student_score: float = float(input("Input Student score:"))
         new_student = {"name": student_name, "score": student_score}
-        grade["students"].append(new_student)
+        detect_exist = False
+        # checking if student already exist in json
+        for student in grade["students"]:
+            if student_name == student["name"]:
+                print("student already exists.")
+                detect_exist = True
+        if not detect_exist:
+            grade["students"].append(new_student)
+
         quit = int(input("enter -1 to quit or any other num to continue:"))
         if quit == -1:
             break
