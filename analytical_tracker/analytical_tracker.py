@@ -34,6 +34,11 @@ def main() -> None:
     user_1 = profile_getter()
     user_2 = profile_getter()
     user_3 = profile_getter()
+    print(
+        ("total user registered: {} ,user_1 registered:{}").format(
+            User.user_registered, user_1.user_registered
+        )
+    )
 
 
 if __name__ == "__main__":
