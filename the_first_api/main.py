@@ -1,6 +1,17 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+
+@app.post("/items/create")
+def create_item(item_data: Item):
+    return item_data
 
 
 @app.get("/")
