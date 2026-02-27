@@ -71,3 +71,13 @@ def return_book(book_id: int) -> dict[str, str | Book]:
         raise HTTPException(status_code=404, detail="book not from our library")
     library[book_id].copies_available += 1
     return {"message": "book returned successfully", "book_detail": library[book_id]}
+
+
+@app.get("/books/search")
+def filter_by_author(author: str) -> dict[int, Book]:
+    book_with_same_author = {}
+    for book_id in library:
+        if library[book_id].author == author:
+            book_with_same_author[book_id] = library[book_id]
+
+    return book_with_same_author
