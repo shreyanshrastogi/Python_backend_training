@@ -5,11 +5,17 @@ from pydantic import BaseModel
 app: FastAPI = FastAPI()
 
 
+class BookSchema(BaseModel):
+    title: str
+    author: str
+    total_copies: int
+
+
 class Book(BaseModel):
     title: str
     author: str
-    copies_available: int
     total_copies: int
+    copies_available: int
 
 
 library: dict[int, Book] = {}
@@ -19,6 +25,18 @@ library: dict[int, Book] = {}
 @app.get("/books")
 def all_books() -> dict[int, Book]:
     return library
+
+
+# filter by author
+@app.get("/books/search")
+def filter_by_author(author: str) -> dict[int, Book]:
+    book_with_same_author = {}
+    for book_id in library:
+        if library[book_id].author == author:
+            book_with_same_author[book_id] = library[book_id]
+    if not book_with_same_author:
+        raise HTTPException(status_code=404, detail=f"no book by author: {author}")
+    return book_with_same_author
 
 
 # get one book detail
@@ -31,12 +49,18 @@ def book_detail(book_id: int) -> Book:
 
 # add a books
 @app.post("/books/add/{book_id}")
-def add_book(book_id: int, book_data: Book) -> dict[str, str | Book]:
+def add_book(book_id: int, book_data: BookSchema) -> dict[str, str | Book]:
     if book_id in library:
         raise HTTPException(status_code=409, detail="book already present")
 
-    library[book_id] = book_data
-    return {"message": "book added successfully", "book_data": book_data}
+    book = Book(
+        title=book_data.title,
+        author=book_data.author,
+        total_copies=book_data.total_copies,
+        copies_available=book_data.total_copies,
+    )
+    library[book_id] = book
+    return {"message": "book added successfully", "book_data": book}
 
 
 # remove a book
@@ -44,6 +68,9 @@ def add_book(book_id: int, book_data: Book) -> dict[str, str | Book]:
 def remove_book(book_id: int) -> dict[str, str]:
     if book_id not in library:
         raise HTTPException(status_code=404, detail="book not found")
+
+    if library[book_id].copies_available < library[book_id].total_copies:
+        raise HTTPException(status_code=400, detail="all books not returned yet")
 
     del library[book_id]
     return {"message": f" {book_id} removed successfully"}
@@ -71,19 +98,6 @@ def return_book(book_id: int) -> dict[str, str | Book]:
     if book_id not in library:
         raise HTTPException(status_code=404, detail="book not from our library")
     if library[book_id].total_copies == library[book_id].copies_available:
-        raise HTTPException(status_code=404, detail="all books are already present")
+        raise HTTPException(status_code=400, detail="all books are already present")
     library[book_id].copies_available += 1
     return {"message": "book returned successfully", "book_detail": library[book_id]}
-
-
-# filter by author
-@app.get("/books/search")
-def filter_by_author(author: str) -> dict[int, Book]:
-    book_with_same_author = {}
-    for book_id in library:
-        if library[book_id].author == author:
-            book_with_same_author[book_id] = library[book_id]
-    if not book_with_same_author:
-        raise HTTPException(status_code=404, detail=f"no book by author: {author}")
-
-    return book_with_same_author
