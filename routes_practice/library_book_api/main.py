@@ -9,6 +9,7 @@ class Book(BaseModel):
     title: str
     author: str
     copies_available: int
+    total_copies: int
 
 
 library: dict[int, Book] = {}
@@ -21,7 +22,7 @@ def all_books() -> dict[int, Book]:
 
 
 # get one book detail
-@app.get("/book/{book_id}")
+@app.get("/books/{book_id}")
 def book_detail(book_id: int) -> Book:
     if book_id not in library:
         raise HTTPException(status_code=404, detail="Book not found")
@@ -50,7 +51,7 @@ def remove_book(book_id: int) -> dict[str, str]:
 
 # issue a book
 @app.put("/books/issue/{book_id}")
-def issue_book(book_id: int) -> dict[str, object]:
+def issue_book(book_id: int) -> dict[str, str | dict]:
 
     if book_id not in library:
         raise HTTPException(status_code=404, detail="book not found")
@@ -69,15 +70,20 @@ def issue_book(book_id: int) -> dict[str, object]:
 def return_book(book_id: int) -> dict[str, str | Book]:
     if book_id not in library:
         raise HTTPException(status_code=404, detail="book not from our library")
+    if library[book_id].total_copies == library[book_id].copies_available:
+        raise HTTPException(status_code=404, detail="all books are already present")
     library[book_id].copies_available += 1
     return {"message": "book returned successfully", "book_detail": library[book_id]}
 
 
+# filter by author
 @app.get("/books/search")
 def filter_by_author(author: str) -> dict[int, Book]:
     book_with_same_author = {}
     for book_id in library:
         if library[book_id].author == author:
             book_with_same_author[book_id] = library[book_id]
+    if not book_with_same_author:
+        raise HTTPException(status_code=404, detail=f"no book by author: {author}")
 
     return book_with_same_author
