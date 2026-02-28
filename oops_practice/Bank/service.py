@@ -23,12 +23,15 @@ class BankServices:
     def transfer(
         self, sender_id: int, receiver_id: int, amount: float
     ) -> dict[str, str | models.Account]:
-        self.db.get_account(sender_id).withdraw(amount)
-        self.db.get_account(receiver_id).deposit(amount)
+        sender = self.db.get_account(sender_id)
+        receiver = self.db.get_account(receiver_id)
+
+        sender.withdraw(amount)
+        receiver.deposit(amount)
         return {
             "message": f"{amount} transferred successfully",
-            "from": self.db.get_account(sender_id),
-            "To": self.db.get_account(receiver_id),
+            "from": sender,
+            "To": receiver,
         }
 
     def get_balance(self, account_id: int) -> float:
