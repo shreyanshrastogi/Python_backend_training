@@ -1,7 +1,7 @@
 import models
 
 
-class DB:
+class AccountDB:
     def __init__(self):
         self.__db = {}
 
