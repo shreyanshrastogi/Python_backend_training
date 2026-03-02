@@ -42,3 +42,6 @@ class BankServices:
 
     def get_history(self, account_id: int) -> list[models.Transaction]:
         return self.db.get_account(account_id=account_id).get_history()
+
+    def get_account(self, account_id: int) -> models.Account:
+        return self.db.get_account(account_id=account_id)
