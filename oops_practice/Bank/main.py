@@ -1,91 +1,96 @@
+import models
 import repository
+import schemas
 import service
+from fastapi import FastAPI
+
+app = FastAPI()
+db = repository.AccountDB()
+bank = service.BankServices(db)
 
 
-def main() -> None:
-    db = repository.AccountDB()
-    bank = service.BankServices(db=db)
-
-    while True:
-        try:
-            print(
-                """Welcome to PyBank!
-    1. Create account
-    2. Deposit
-    3. Withdraw
-    4. Transfer
-    5. Check balance
-    6. Transaction history
-    7. Exit
-            """
-            )
-            choice = int(input("Enter choice:"))
-            match choice:
-
-                case 1:
-
-                    name: str = input("name:")
-                    account_id: int = int(input("enter id:"))
-                    initial_balance: float = float(input("enter starting balance:"))
-                    bank.create_account(
-                        name=name, account_id=account_id, balance=initial_balance
-                    )
-
-                    print(
-                        f"account created successfully \n{bank.get_account(account_id=account_id)}"
-                    )
-
-                case 2:
-
-                    account_id: int = int(input("enter id:"))
-                    amount: float = float(input("enter amount:"))
-                    bank.deposit(account_id=account_id, amount=amount)
-                    print(
-                        f"money deposited  successfully \nupdated balance:{bank.get_balance(account_id=account_id)}"
-                    )
-
-                case 3:
-
-                    account_id: int = int(input("enter id:"))
-                    amount: float = float(input("enter amount:"))
-                    bank.withdraw(account_id=account_id, amount=amount)
-                    print(
-                        f"money withdrawn  successfully \nupdated balance:{bank.get_balance(account_id=account_id)}"
-                    )
-
-                case 4:
-
-                    sender_id: int = int(input("enter sender id:"))
-                    receiver_id: int = int(input("enter receiver id:"))
-                    amount: float = float(input("enter amount:"))
-                    bank.transfer(
-                        sender_id=sender_id, receiver_id=receiver_id, amount=amount
-                    )
-
-                    print(
-                        f"money Transferred  successfully \nupdated balance:{bank.get_balance(account_id=sender_id)}"
-                    )
-
-                case 5:
-                    account_id: int = int(input("enter id:"))
-                    balance = bank.get_balance(account_id=account_id)
-                    print(
-                        f"{bank.get_account(account_id=account_id).name} with {account_id} has balance of {balance} Rs"
-                    )
-                case 6:
-                    account_id: int = int(input("enter id:"))
-                    history = bank.get_history(account_id=account_id)
-                    for transaction in history:
-                        print(transaction)
-
-                case 7:
-                    break
-
-                case _:
-                    print("invalid choice.")
-        except ValueError as e:
-            print(f"error:{e}")
+# get_all_account
+@app.get("/account")
+def all_accounts() -> list[dict[str, str | int | float]]:
+    accounts = bank.get_all_account()
+    return [
+        {"account_id": aid, "name": acc.name, "balance": acc.get_balance()}
+        for aid, acc in accounts.items()
+    ]
 
 
-if __name__ == "__main__":
-    main()
+# transfer
+@app.put("/account/transfer")
+def transfer(
+    account_details: schemas.TransferSchema,
+) -> dict[str, str | schemas.TransferSchema]:
+    bank.transfer(
+        account_details.sender_id, account_details.receiver_id, account_details.amount
+    )
+    return {"message": "transfer successful", "details": account_details}
+
+
+# create account
+@app.post("/account/create/{account_id}")
+def create_account(
+    account_id: int, account: schemas.Data
+) -> dict[str, int | str | schemas.Data]:
+    bank.create_account(
+        account_id=account_id, name=account.name, balance=account.balance
+    )
+    return {
+        "message": "bank account created successfully",
+        "account_id": account_id,
+        "account_details": account,
+    }
+
+
+# deposit
+@app.put("/account/{account_id}/deposit")
+def deposit(account_id: int, amount: schemas.AmountSchema) -> dict[str, str | float]:
+    bank.deposit(account_id=account_id, amount=amount.amount)
+    return {
+        "message": "deposited successfully",
+        "updated_balance": bank.get_balance(account_id=account_id),
+    }
+
+
+# withdraw
+@app.put("/account/{account_id}/withdraw")
+def withdraw(account_id: int, amount: schemas.AmountSchema) -> dict[str, str | float]:
+    bank.withdraw(account_id=account_id, amount=amount.amount)
+    return {
+        "message": "money withdrawn successfully",
+        "updated_balance": bank.get_balance(account_id=account_id),
+    }
+
+
+# get balance
+@app.get("/account/{account_id}/balance")
+def get_balance(account_id: int) -> dict[str, int | float]:
+    balance = bank.get_balance(account_id)
+    return {"account_id": account_id, "balance": balance}
+
+
+# get_account
+@app.get("/account/{account_id}")
+def get_account(account_id: int) -> dict[str, str | int | float]:
+    account = bank.get_account(account_id=account_id)
+    return {
+        "name": account.name,
+        "account_id": account_id,
+        "account_balance": bank.get_balance(account_id),
+    }
+
+
+# delete_account
+@app.delete("/account/delete/{account_id}")
+def delete_account(account_id: int) -> dict[str, str]:
+    return bank.delete_account(account_id=account_id)
+
+
+# get history
+@app.get("/account/{account_id}/history")
+def get_history(account_id) -> dict[str, list[str]]:
+    history = bank.get_history(account_id=account_id)
+    return {"history": [str(t) for t in history]}

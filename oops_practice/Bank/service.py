@@ -45,3 +45,6 @@ class BankServices:
 
     def get_account(self, account_id: int) -> models.Account:
         return self.db.get_account(account_id=account_id)
+
+    def delete_account(self, account_id: int):
+        return self.db.delete_account(account_id=account_id)
